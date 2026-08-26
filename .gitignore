@@ -1,0 +1,9 @@
+# Ne kerüljön fel a teljes OCR JSON és a munkakimenetek
+*.json
+output*/
+state*/
+*_repaired*/
+*_qa_fixed*/
+*.zip
+.env
+__pycache__/
