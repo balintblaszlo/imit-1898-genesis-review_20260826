@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4</title>
+<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4.1</title>
 <style>
   :root{
     --border:#d8dde6; --bg:#f5f7fb; --panel:#fff; --text:#172033;
@@ -68,7 +68,7 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">IMIT párhuzamos korrektúra v4</div>
+    <div class="brand">IMIT párhuzamos korrektúra v4.1</div>
     <button id="loadRepoDefaultsBtn" title="GitHub Pages esetén automatikusan betölti a repo XML/PDF fájljait">Repo alapfájlok</button>
     <div class="control"><span class="muted">Bal oldal:</span><input id="sourceFile" type="file" accept=".json,.xml,application/json,text/xml,application/xml"></div>
     <div class="control"><span class="muted">PDF:</span><input id="pdfFile" type="file" accept="application/pdf,.pdf"></div>
@@ -372,14 +372,39 @@
     if(page) gotoPdfPage(page);
   }
 
-  function gotoPdfPage(page){
+  function pdfUrlWithPage(page, forceReload=false){
+    const base = state.pdfUrl || '';
+    if(!base) return '';
+    // Chrome beépített PDF-nézője iframe-ben néha nem ugrik, ha csak a #page rész változik.
+    // Repo/PDF URL-nél ezért oldalanként eltérő queryt adunk; a böngésző cache-ből tölti,
+    // de a PDF-néző újranyitja a kért oldalon. Blob URL-nél nem teszünk queryt.
+    let url = base;
+    if(!base.startsWith('blob:') && !base.startsWith('data:')){
+      const sep = base.includes('?') ? '&' : '?';
+      url = base + sep + 'page=' + encodeURIComponent(String(page)) + (forceReload ? '&reload=' + Date.now() : '');
+    } else if(forceReload){
+      url = base;
+    }
+    return url + `#page=${page}&zoom=page-width`;
+  }
+
+  function gotoPdfPage(page, opts={}){
     if(!Number.isFinite(page) || page <= 0) return;
+    const forceReload = !!opts.forceReload;
     state.currentPdfPage=page;
     el('pdfPagePill').textContent='oldal: '+page;
     updateControls();
     if(state.pdfUrl){
-      el('pdfEmpty').classList.add('hidden'); el('pdfFrame').classList.remove('hidden');
-      el('pdfFrame').src = state.pdfUrl + `#page=${page}&zoom=page-width`;
+      el('pdfEmpty').classList.add('hidden');
+      const frame = el('pdfFrame');
+      frame.classList.remove('hidden');
+      const target = pdfUrlWithPage(page, forceReload);
+      if(forceReload){
+        frame.src = 'about:blank';
+        setTimeout(()=>{ frame.src = target; }, 60);
+      } else if(frame.src !== target){
+        frame.src = target;
+      }
     }
   }
 
@@ -416,18 +441,21 @@
     if(first && first.primaryPage) gotoPdfPage(first.primaryPage);
   }
 
-  function loadPdfFromUrl(url, name){
+  function loadPdfFromUrl(url, name, preferredPage=null){
     state.pdfUrl=url; el('pdfName').textContent=name;
     el('pdfEmpty').classList.add('hidden'); el('pdfFrame').classList.remove('hidden');
-    const p=state.currentPdfPage || 1; gotoPdfPage(p);
+    const p=preferredPage || state.currentPdfPage || 1;
+    gotoPdfPage(p, {forceReload:true});
   }
 
   async function loadRepoDefaults(){
     try{
-      loadPdfFromUrl(DEFAULT_PDF_URL, DEFAULT_PDF_NAME);
+      // Előbb az XML-t töltjük be, hogy már ismerjük az első bibliai oldal számát,
+      // és a PDF ne az 1. borító/előzéklapra nyíljon meg.
       const res = await fetch(DEFAULT_SOURCE_URL, {cache:'no-store'});
       if(!res.ok) throw new Error(`Nem található: ${DEFAULT_SOURCE_URL}`);
       await loadSourceFromText(await res.text(), DEFAULT_SOURCE_NAME);
+      loadPdfFromUrl(DEFAULT_PDF_URL, DEFAULT_PDF_NAME, state.currentPdfPage || 9);
     }catch(e){
       updateControls();
       el('content').innerHTML=`<div class="notice"><b>A repo alapfájlok automatikus betöltése nem sikerült.</b><br>${esc(e.message||e)}<br><br>GitHub Pages alatt ellenőrizd, hogy létezik-e: <span class="mono">${esc(DEFAULT_SOURCE_URL)}</span> és <span class="mono">${esc(DEFAULT_PDF_URL)}</span>. Helyi fájlból megnyitva a böngésző blokkolhatja az XML automatikus beolvasását; ilyenkor használd a fájlválasztókat.</div>`;
@@ -467,7 +495,7 @@
     state.currentCommentIndex = (state.currentCommentIndex + 1 + state.commentRefs.length) % state.commentRefs.length;
     focusRef(state.commentRefs[state.currentCommentIndex]);
   });
-  el('openPdfBtn').addEventListener('click',()=>{if(state.currentPdfPage) gotoPdfPage(state.currentPdfPage);});
+  el('openPdfBtn').addEventListener('click',()=>{if(state.currentPdfPage) gotoPdfPage(state.currentPdfPage, {forceReload:true});});
 
   el('exportBtn').addEventListener('click',()=>{
     const payload={schema:'imit-parallel-review-comments-v4', exportedAt:new Date().toISOString(), sourceName:state.sourceName, sourceType:state.sourceType, verseCount:state.groups.size, comments:state.comments};
