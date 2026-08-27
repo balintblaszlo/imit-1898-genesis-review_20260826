@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4.1</title>
+<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4.2</title>
 <style>
   :root{
     --border:#d8dde6; --bg:#f5f7fb; --panel:#fff; --text:#172033;
@@ -60,6 +60,11 @@
   .rowComment.hiddenByToggle{display:none}
   .tinyHint{font-size:12px;color:var(--muted)}
   .rightHead{height:auto;background:#fff;color:#172033;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+  .pdfSourceBar{background:#f8fafc;color:#344054;border-bottom:1px solid var(--border);padding:9px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:12px;line-height:1.45}
+  .pdfSourceText{flex:1 1 520px;min-width:260px}
+  .pdfSourceText b{color:#172033}
+  .sourceLink{display:inline-flex;align-items:center;text-decoration:none;border:1px solid #84caff;background:var(--bluebg);color:var(--blue);font-weight:700;border-radius:8px;padding:7px 10px;white-space:nowrap;box-shadow:var(--shadow)}
+  .sourceLink:hover{background:#dbeeff}
   #pdfFrame{flex:1;width:100%;border:0;background:#111827}.emptyPdf{color:#d0d5dd;padding:18px}
   .hidden{display:none!important}.muted{color:var(--muted)}.nowrap{white-space:nowrap}.kbd{border:1px solid #d0d5dd;border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:#fff;font-family:var(--mono);font-size:12px}
   mark{background:#fff3bf;padding:0 2px;border-radius:3px}
@@ -68,7 +73,7 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">IMIT párhuzamos korrektúra v4.1</div>
+    <div class="brand">IMIT párhuzamos korrektúra v4.2</div>
     <button id="loadRepoDefaultsBtn" title="GitHub Pages esetén automatikusan betölti a repo XML/PDF fájljait">Repo alapfájlok</button>
     <div class="control"><span class="muted">Bal oldal:</span><input id="sourceFile" type="file" accept=".json,.xml,application/json,text/xml,application/xml"></div>
     <div class="control"><span class="muted">PDF:</span><input id="pdfFile" type="file" accept="application/pdf,.pdf"></div>
@@ -97,6 +102,18 @@
     <div class="pane" id="rightPane">
       <div class="rightHead">
         <b>PDF</b><span id="pdfName" class="muted">nincs betöltve</span><span id="pdfPagePill" class="pill">oldal: —</span><button id="openPdfBtn" disabled>aktuális oldal</button>
+      </div>
+      <div class="pdfSourceBar">
+        <div class="pdfSourceText">
+          <b>PDF forrása:</b> Magyar Nemzeti Digitális Archívum (MaNDA).
+          A rekord forrása és jogtulajdonosa: Országos Rabbiképző – Zsidó Egyetem Könyvtára.
+          Kiadás: Budapest, 1898. Hozzáférés: ingyenes.
+          <b>Jogállás/licencjelölés:</b> PDM – Public Domain Mark 1.0.
+        </div>
+        <a class="sourceLink"
+           href="https://mandadb.hu/tetel/656037/Szentiras"
+           target="_blank"
+           rel="noopener noreferrer">MaNDA rekord és leírás ↗</a>
       </div>
       <div id="pdfEmpty" class="emptyPdf">Töltsd be az <b>1_Moz.pdf</b>-et. JSON-ból vett PDF-oldal esetén a versre vagy a PDF gombra kattintva ide ugrik.</div>
       <iframe id="pdfFrame" class="hidden"></iframe>
