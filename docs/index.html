@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4.3</title>
+<title>IMIT JSON/XML + PDF párhuzamos korrektúra v4.4</title>
 <style>
   :root{
     --border:#d8dde6; --bg:#f5f7fb; --panel:#fff; --text:#172033;
@@ -14,8 +14,8 @@
     --fontSize:17px;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-  .topbar{height:auto;min-height:58px;background:#fff;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:center;padding:10px 14px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+  body{margin:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .topbar{height:auto;min-height:50px;flex:0 0 auto;background:#fff;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;padding:6px 10px;flex-wrap:wrap;position:relative;z-index:20}
   .brand{font-weight:800;font-size:16px;margin-right:6px;white-space:nowrap}
   .control{display:flex;align-items:center;gap:6px;white-space:nowrap}
   label.btnlike,input[type=file]::file-selector-button,button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:7px 10px;cursor:pointer;color:#101828;box-shadow:var(--shadow)}
@@ -27,13 +27,13 @@
   .pill.green{border-color:#75e0a7;background:var(--greenbg);color:var(--green);font-weight:700}
   .pill.blue{border-color:#84caff;background:var(--bluebg);color:var(--blue);font-weight:700}
   .pill.orange{border-color:#fdb022;background:var(--orangebg);color:var(--orange);font-weight:700}
-  .layout{height:calc(100vh - 78px);display:grid;grid-template-columns:minmax(360px,52%) 8px minmax(360px,1fr);overflow:hidden}
+  .layout{flex:1 1 auto;min-height:0;height:auto;display:grid;grid-template-columns:minmax(360px,52%) 8px minmax(360px,1fr);overflow:hidden}
   .pane{height:100%;overflow:auto;background:var(--panel)}
   #leftPane{border-right:1px solid var(--border)}
   #rightPane{border-left:1px solid var(--border);display:flex;flex-direction:column;background:#111827}
   .splitter{background:#d0d5dd;cursor:col-resize}
   .splitter:hover{background:#98a2b3}
-  .subbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:8px 12px;z-index:10;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .subbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:5px 7px;z-index:10;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
   .search{padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;min-width:230px}
   select{padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
   .notice{margin:12px;padding:12px;border:1px dashed #cbd5e1;background:#fff;border-radius:10px;color:#475467}
@@ -67,13 +67,19 @@
   #pdfFrame{flex:1;width:100%;border:0;background:#111827}.emptyPdf{color:#d0d5dd;padding:18px}
   .hidden{display:none!important}.muted{color:var(--muted)}.nowrap{white-space:nowrap}.kbd{border:1px solid #d0d5dd;border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:#fff;font-family:var(--mono);font-size:12px}
   mark{background:#fff3bf;padding:0 2px;border-radius:3px}
-  @media (max-width:900px){.layout{grid-template-columns:1fr;height:auto}.splitter{display:none}.pane{height:auto;min-height:50vh}.vref{text-align:left}.verse{grid-template-columns:1fr}.rowComment{grid-template-columns:1fr}}
+  .subbar button,.subbar select,.subbar .search{padding:5px 8px}
+  .subbar .control{gap:4px;font-size:12px}
+  .subbar .pill{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  .subbar.collapsed{display:none}
+  #toggleReviewBarBtn{font-weight:700}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}.splitter{display:none}.pane{height:auto;min-height:0}.vref{text-align:left}.verse{grid-template-columns:1fr}.rowComment{grid-template-columns:1fr}.sourceInfoInline{font-size:11px}.topbar{gap:5px;padding:5px 7px}}
 </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">IMIT párhuzamos korrektúra v4.3</div>
+    <div class="brand">IMIT párhuzamos korrektúra v4.4</div>
     <button id="loadRepoDefaultsBtn" title="GitHub Pages esetén automatikusan betölti a repo XML/PDF fájljait">Repo alapfájlok</button>
+    <button id="toggleReviewBarBtn" type="button" title="A bal oldali korrektúra-eszközsor ki- és bekapcsolása">Eszközsor elrejtése</button>
     <div class="control"><span class="muted">Bal oldal:</span><input id="sourceFile" type="file" accept=".json,.xml,application/json,text/xml,application/xml"></div>
     <div class="control"><span class="muted">PDF:</span><input id="pdfFile" type="file" accept="application/pdf,.pdf"></div>
     <button id="exportBtn" disabled>Kommentek export</button>
@@ -92,10 +98,10 @@
 
   <div class="layout" id="layout">
     <div class="pane" id="leftPane">
-      <div class="subbar">
-        <label class="control"><input id="showComments" type="checkbox" checked> kommentmezők</label>
+      <div class="subbar" id="reviewBar">
+        <label class="control"><input id="showComments" type="checkbox"> kommentmezők</label>
         <label class="control"><input id="commentedOnly" type="checkbox"> csak kommenteltek</label>
-        <label class="control"><input id="pdfFollow" type="checkbox" checked> PDF kövesse a bal oldalt</label>
+        <label class="control"><input id="pdfFollow" type="checkbox"> PDF kövesse a bal oldalt</label>
         <input id="searchBox" class="search" placeholder="keresés: GEN 6:15, magassá..." disabled>
         <button id="fontMinus" disabled>A−</button><button id="fontPlus" disabled>A+</button>
         <button id="firstVerseBtn" disabled>első vers</button>
@@ -490,6 +496,11 @@
   });
 
   el('loadRepoDefaultsBtn').addEventListener('click',loadRepoDefaults);
+  el('toggleReviewBarBtn').addEventListener('click',()=>{
+    const bar = el('reviewBar');
+    const collapsed = bar.classList.toggle('collapsed');
+    el('toggleReviewBarBtn').textContent = collapsed ? 'Eszközsor megjelenítése' : 'Eszközsor elrejtése';
+  });
   el('showComments').addEventListener('change',render);
   el('commentedOnly').addEventListener('change',render);
   el('pdfFollow').addEventListener('change',()=>setupScrollObserver());
